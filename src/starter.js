@@ -21,7 +21,7 @@ const yScale = d3.scaleLinear().range([height - margin.bottom, margin.top]);
 const radiusScale = d3.scaleSqrt().range([0, 55]);
 const colorScale = d3
   .scaleOrdinal()
-  .range(["#8160C8", "#FFA602", "#CDC0E4", "#cfcfcf"]); //데이터 순서대로 색 지정
+  .range(["#657D81", "#E2B4B7", "#A0C9C3", "#BD637E"]); //데이터 순서대로 색 지정
 
 // axis
 const xAxis = d3
@@ -41,8 +41,8 @@ const tooltip = d3
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////  Load CSV  ////////////////////////////
 let data = [];
-let circles;
 let region;
+let circles, xUnit, yUnit, legendRects, legendTexts;
 
 // data
 
@@ -58,7 +58,7 @@ d3.csv("data/gapminder_combined.csv").then((raw_data) => {
 
   //   console.log(data);
   region = [...new Set(data.map((d) => d.region))];
-  console.log(region);
+  // console.log(region);
 
   //   xScale.domain(d3.extent(data, (d) => d.income)); // 두 가지가 같은 방식
   xScale.domain([500, d3.max(data, (d) => d.income)]);
@@ -89,18 +89,97 @@ d3.csv("data/gapminder_combined.csv").then((raw_data) => {
     .attr("cy", (d) => yScale(d.life_expectancy))
     .attr("r", (d) => radiusScale(d.population))
     .attr("fill", (d) => colorScale(d.region))
-    .attr("stroke", "#fff")
+    .attr("stroke", "whitesmoke")
     .on("mousemove", function (event, d, index) {
       tooltip //mousemove는 툴팁이 따라와서 mouseover보다 더 자연스러움
         .style("left", event.pageX + "px")
         .style("top", event.pageY - 52 + "px")
         .style("display", "block")
-        .html(`${d.country}`);
+        .html(
+          `<div>Country: ${d.country}, <span class="test">Life Expectancy: ${d.life_expectancy}</span></div>`
+        );
 
-      d3.select(this).style("stroke-width", 3).attr("stroke", "#111");
+      d3.select(this).style("stroke-width", 2).attr("stroke", "#333");
     })
     .on("mouseout", function () {
       tooltip.style("display", "none");
       d3.select(this).style("stroke-width", 1).attr("stroke", "#fff");
     });
+
+  // Units
+  xUnit = svg
+    .append("text")
+    .attr("transform", `translate(${width / 2}, ${height - 10})`)
+    .text("GDP per capita")
+    .attr("fill", "#666")
+    .attr("class", "unit");
+
+  yUnit = svg
+    .append("text")
+    .attr("transform", "translate(20," + height / 2 + ") rotate(-90)")
+    .text("Life expectancy")
+    .attr("fill", "#666")
+    .attr("class", "unit");
+
+  // Legend
+  legendRects = svg
+    .selectAll("legend-rects")
+    .data(region)
+    .enter()
+    .append("rect")
+    .attr("x", (d, i) => width - margin.right - 83)
+    .attr("y", (d, i) => height - margin.bottom - 70 - 25 * i)
+    .attr("width", 12)
+    .attr("height", 12)
+    .attr("fill", (d) => colorScale(d));
+
+  legendTexts = svg
+    .selectAll("legend-texts")
+    .data(region)
+    .enter()
+    .append("text")
+    .attr("x", (d, i) => width - margin.right - 83 + 20)
+    .attr("y", (d, i) => height - margin.bottom - 70 - 25 * i + 12)
+    .text((d) => d)
+    .attr("fill", "#666")
+    .attr("class", "legend-texts");
+});
+
+////RESIZE////
+window.addEventListener("resize", () => {
+  //  width, height updated
+  width = parseInt(d3.select("#svg-container").style("width"));
+  height = parseInt(d3.select("#svg-container").style("height"));
+
+  //  scale updated
+  xScale.range([margin.left, width - margin.right]);
+  yScale.range([height - margin.bottom, margin.top]);
+
+  //  axis updated
+  d3.select(".x-axis")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(xAxis);
+
+  d3.select(".y-axis")
+    .attr("transform", `translate(${margin.left}, 0)`)
+    .call(yAxis);
+
+  // circles updated
+  circles
+    .attr("cx", (d) => xScale(d.income))
+    .attr("cy", (d) => yScale(d.life_expectancy))
+    .attr("r", (d) => radiusScale(d.population));
+
+  // units updated
+  xUnit.attr("transform", `translate(${width / 2}, ${height - 10})`);
+  yUnit.attr("transform", "translate(20," + height / 2 + ") rotate(-90)");
+
+  //  legend updated
+  legendRects
+    .attr("x", (d, i) => width - margin.right - 83)
+    .attr("y", (d, i) => height - margin.bottom - 70 - 25 * i);
+
+  legendTexts
+    .attr("x", (d, i) => width - margin.right - 83 + 20)
+    .attr("y", (d, i) => height - margin.bottom - 70 - 25 * i + 15);
 });
