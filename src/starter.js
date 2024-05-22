@@ -47,7 +47,7 @@ let circles, xUnit, yUnit, legendRects, legendTexts;
 // data
 
 d3.csv("data/gapminder_combined.csv").then((raw_data) => {
-  //   console.log(raw_data);
+  console.log(raw_data);
   data = raw_data.map((d) => {
     d.population = parseInt(d.population);
     d.income = parseInt(d.income);
